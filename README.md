@@ -21,8 +21,23 @@ This is the `views` property that is used for this page:
       "resources": ["barley"],
       "specType": "vega",
       "spec": {
+        "$schema": "https://vega.github.io/schema/vega/v3.0.json",
         "width": 200,
-        "height": 720,
+        "padding": 5,
+        "signals": [
+          {
+            "name": "offset",
+            "value": 15
+          },
+          {
+            "name": "cellHeight",
+            "value": 100
+          },
+          {
+            "name": "height",
+            "update": "6 * (offset + cellHeight)"
+          }
+        ],
         "data": [
           {
             "name": "barley"
@@ -30,86 +45,179 @@ This is the `views` property that is used for this page:
         ],
         "scales": [
           {
-            "name": "g",
-            "type": "ordinal",
-            "range": "height",
-            "padding": 0.15,
+            "name": "gscale",
+            "type": "band",
+            "range": [
+              0,
+              {
+                "signal": "height"
+              }
+            ],
+            "round": true,
             "domain": {
-              "data": "barley", "field": "site",
-              "sort": {"field": "yield", "op": "median"}
-            },
-            "reverse": true
+              "data": "barley",
+              "field": "site",
+              "sort": {
+                "field": "yield",
+                "op": "median",
+                "order": "descending"
+              }
+            }
           },
           {
-            "name": "x",
+            "name": "xscale",
             "type": "linear",
             "nice": true,
             "range": "width",
-            "domain": {"data": "barley", "field": "yield"}
+            "round": true,
+            "domain": {
+              "data": "barley",
+              "field": "yield"
+            }
           },
           {
-            "name": "c",
+            "name": "cscale",
             "type": "ordinal",
-            "range": "category10",
-            "domain": {"data": "barley", "field": "year"}
+            "range": "category",
+            "domain": {
+              "data": "barley",
+              "field": "year"
+            }
           }
         ],
         "axes": [
-          {"type": "x", "scale": "x"}
+          {
+            "orient": "bottom",
+            "scale": "xscale",
+            "zindex": 1
+          }
         ],
         "legends": [
-          {"fill": "c", "title": "year"}
+          {
+            "stroke": "cscale",
+            "title": "Year",
+            "padding": 4,
+            "encode": {
+              "symbols": {
+                "enter": {
+                  "strokeWidth": {
+                    "value": 2
+                  },
+                  "size": {
+                    "value": 50
+                  }
+                }
+              }
+            }
+          }
         ],
         "marks": [
           {
-            "name": "sites",
+            "name": "site",
             "type": "group",
             "from": {
-              "data": "barley",
-              "transform": [{"type": "facet", "groupby": ["site"]}]
+              "facet": {
+                "data": "barley",
+                "name": "sites",
+                "groupby": "site"
+              }
+            },
+            "encode": {
+              "enter": {
+                "y": {
+                  "scale": "gscale",
+                  "field": "site",
+                  "offset": {
+                    "signal": "offset"
+                  }
+                },
+                "height": {
+                  "signal": "cellHeight"
+                },
+                "width": {
+                  "signal": "width"
+                },
+                "stroke": {
+                  "value": "#ccc"
+                }
+              }
             },
             "scales": [
               {
-                "name": "y",
-                "type": "ordinal",
-                "range": "height",
-                "points": true,
-                "padding": 1.2,
+                "name": "yscale",
+                "type": "point",
+                "range": [
+                  0,
+                  {
+                    "signal": "cellHeight"
+                  }
+                ],
+                "padding": 1,
+                "round": true,
                 "domain": {
-                  "data": "barley", "field": "variety",
-                  "sort": {"field": "yield", "op": "median"}
-                },
-                "reverse": true
+                  "data": "barley",
+                  "field": "variety",
+                  "sort": {
+                    "field": "yield",
+                    "op": "median",
+                    "order": "descending"
+                  }
+                }
               }
             ],
             "axes": [
               {
-                "type": "y",
-                "scale": "y",
+                "orient": "left",
+                "scale": "yscale",
                 "tickSize": 0,
-                "properties": {"axis": {"stroke": {"value": "transparent"}}}
+                "domain": false,
+                "grid": true,
+                "encode": {
+                  "grid": {
+                    "enter": {
+                      "strokeDash": {
+                        "value": [
+                          3,
+                          3
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "orient": "right",
+                "scale": "yscale",
+                "tickSize": 0,
+                "domain": false
               }
             ],
-            "properties": {
-              "enter": {
-                "x": {"value": 0.5},
-                "y": {"scale": "g", "field": "key"},
-                "height": {"scale": "g", "band": true},
-                "width": {"field": {"group": "width"}},
-                "stroke": {"value": "#ccc"}
-              }
-            },
             "marks": [
               {
                 "type": "symbol",
-                "properties": {
+                "from": {
+                  "data": "sites"
+                },
+                "encode": {
                   "enter": {
-                    "x": {"scale": "x", "field": "yield"},
-                    "y": {"scale": "y", "field": "variety"},
-                    "size": {"value": 50},
-                    "stroke": {"scale": "c", "field": "year"},
-                    "strokeWidth": {"value": 2},
-                    "fill": {"value": "transparent"}
+                    "x": {
+                      "scale": "xscale",
+                      "field": "yield"
+                    },
+                    "y": {
+                      "scale": "yscale",
+                      "field": "variety"
+                    },
+                    "stroke": {
+                      "scale": "cscale",
+                      "field": "year"
+                    },
+                    "strokeWidth": {
+                      "value": 2
+                    },
+                    "size": {
+                      "value": 50
+                    }
                   }
                 }
               }
@@ -117,16 +225,36 @@ This is the `views` property that is used for this page:
           },
           {
             "type": "text",
-            "from": {"mark": "sites"},
-            "properties": {
+            "from": {
+              "data": "site"
+            },
+            "encode": {
               "enter": {
-                "x": {"field": {"group": "width"}, "mult": 0.5},
-                "y": {"field": "y", "offset": -2},
-                "fontWeight": {"value": "bold"},
-                "text": {"field": "datum.site"},
-                "align": {"value": "center"},
-                "baseline": {"value": "bottom"},
-                "fill": {"value": "#000"}
+                "x": {
+                  "field": "width",
+                  "mult": 0.5
+                },
+                "y": {
+                  "field": "y"
+                },
+                "fontSize": {
+                  "value": 11
+                },
+                "fontWeight": {
+                  "value": "bold"
+                },
+                "text": {
+                  "field": "datum.site"
+                },
+                "align": {
+                  "value": "center"
+                },
+                "baseline": {
+                  "value": "bottom"
+                },
+                "fill": {
+                  "value": "#000"
+                }
               }
             }
           }
@@ -191,5 +319,5 @@ Outside of `spec` attribute there are some other important parameters to note:
 
 [vega]: https://vega.github.io/vega/
 [trellis]: http://www.jstor.org/stable/1390777
-[editor]: https://vega.github.io/vega-editor/?mode=vega&spec=barley
+[editor]: https://vega.github.io/editor/#/examples/vega/barley-trellis-plot
 [datapackage.json]: http://specs.frictionlessdata.io/data-package/

@@ -43,8 +43,23 @@
       ],
       "specType": "vega",
       "spec": {
+        "$schema": "https://vega.github.io/schema/vega/v3.0.json",
         "width": 200,
-        "height": 720,
+        "padding": 5,
+        "signals": [
+          {
+            "name": "offset",
+            "value": 15
+          },
+          {
+            "name": "cellHeight",
+            "value": 100
+          },
+          {
+            "name": "height",
+            "update": "6 * (offset + cellHeight)"
+          }
+        ],
         "data": [
           {
             "name": "barley"
@@ -52,34 +67,40 @@
         ],
         "scales": [
           {
-            "name": "g",
-            "type": "ordinal",
-            "range": "height",
-            "padding": 0.15,
+            "name": "gscale",
+            "type": "band",
+            "range": [
+              0,
+              {
+                "signal": "height"
+              }
+            ],
+            "round": true,
             "domain": {
               "data": "barley",
               "field": "site",
               "sort": {
                 "field": "yield",
-                "op": "median"
+                "op": "median",
+                "order": "descending"
               }
-            },
-            "reverse": true
+            }
           },
           {
-            "name": "x",
+            "name": "xscale",
             "type": "linear",
             "nice": true,
             "range": "width",
+            "round": true,
             "domain": {
               "data": "barley",
               "field": "yield"
             }
           },
           {
-            "name": "c",
+            "name": "cscale",
             "type": "ordinal",
-            "range": "category10",
+            "range": "category",
             "domain": {
               "data": "barley",
               "field": "year"
@@ -88,111 +109,136 @@
         ],
         "axes": [
           {
-            "type": "x",
-            "scale": "x"
+            "orient": "bottom",
+            "scale": "xscale",
+            "zindex": 1
           }
         ],
         "legends": [
           {
-            "fill": "c",
-            "title": "year"
+            "stroke": "cscale",
+            "title": "Year",
+            "padding": 4,
+            "encode": {
+              "symbols": {
+                "enter": {
+                  "strokeWidth": {
+                    "value": 2
+                  },
+                  "size": {
+                    "value": 50
+                  }
+                }
+              }
+            }
           }
         ],
         "marks": [
           {
-            "name": "sites",
+            "name": "site",
             "type": "group",
             "from": {
-              "data": "barley",
-              "transform": [
-                {
-                  "type": "facet",
-                  "groupby": [
-                    "site"
-                  ]
-                }
-              ]
+              "facet": {
+                "data": "barley",
+                "name": "sites",
+                "groupby": "site"
+              }
             },
-            "scales": [
-              {
-                "name": "y",
-                "type": "ordinal",
-                "range": "height",
-                "points": true,
-                "padding": 1.2,
-                "domain": {
-                  "data": "barley",
-                  "field": "variety",
-                  "sort": {
-                    "field": "yield",
-                    "op": "median"
-                  }
-                },
-                "reverse": true
-              }
-            ],
-            "axes": [
-              {
-                "type": "y",
-                "scale": "y",
-                "tickSize": 0,
-                "properties": {
-                  "axis": {
-                    "stroke": {
-                      "value": "transparent"
-                    }
-                  }
-                }
-              }
-            ],
-            "properties": {
+            "encode": {
               "enter": {
-                "x": {
-                  "value": 0.5
-                },
                 "y": {
-                  "scale": "g",
-                  "field": "key"
+                  "scale": "gscale",
+                  "field": "site",
+                  "offset": {
+                    "signal": "offset"
+                  }
                 },
                 "height": {
-                  "scale": "g",
-                  "band": true
+                  "signal": "cellHeight"
                 },
                 "width": {
-                  "field": {
-                    "group": "width"
-                  }
+                  "signal": "width"
                 },
                 "stroke": {
                   "value": "#ccc"
                 }
               }
             },
+            "scales": [
+              {
+                "name": "yscale",
+                "type": "point",
+                "range": [
+                  0,
+                  {
+                    "signal": "cellHeight"
+                  }
+                ],
+                "padding": 1,
+                "round": true,
+                "domain": {
+                  "data": "barley",
+                  "field": "variety",
+                  "sort": {
+                    "field": "yield",
+                    "op": "median",
+                    "order": "descending"
+                  }
+                }
+              }
+            ],
+            "axes": [
+              {
+                "orient": "left",
+                "scale": "yscale",
+                "tickSize": 0,
+                "domain": false,
+                "grid": true,
+                "encode": {
+                  "grid": {
+                    "enter": {
+                      "strokeDash": {
+                        "value": [
+                          3,
+                          3
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "orient": "right",
+                "scale": "yscale",
+                "tickSize": 0,
+                "domain": false
+              }
+            ],
             "marks": [
               {
                 "type": "symbol",
-                "properties": {
+                "from": {
+                  "data": "sites"
+                },
+                "encode": {
                   "enter": {
                     "x": {
-                      "scale": "x",
+                      "scale": "xscale",
                       "field": "yield"
                     },
                     "y": {
-                      "scale": "y",
+                      "scale": "yscale",
                       "field": "variety"
                     },
-                    "size": {
-                      "value": 50
-                    },
                     "stroke": {
-                      "scale": "c",
+                      "scale": "cscale",
                       "field": "year"
                     },
                     "strokeWidth": {
                       "value": 2
                     },
-                    "fill": {
-                      "value": "transparent"
+                    "size": {
+                      "value": 50
                     }
                   }
                 }
@@ -202,19 +248,19 @@
           {
             "type": "text",
             "from": {
-              "mark": "sites"
+              "data": "site"
             },
-            "properties": {
+            "encode": {
               "enter": {
                 "x": {
-                  "field": {
-                    "group": "width"
-                  },
+                  "field": "width",
                   "mult": 0.5
                 },
                 "y": {
-                  "field": "y",
-                  "offset": -2
+                  "field": "y"
+                },
+                "fontSize": {
+                  "value": 11
                 },
                 "fontWeight": {
                   "value": "bold"
